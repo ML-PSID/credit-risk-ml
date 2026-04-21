@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard | Taipei 2005 Credit Atlas{% endblock %}
+{% block content %}
+<section class="stagger">
+  <p class="eyebrow">Dashboard</p>
+  <h1>Axes d'analyse: portefeuille, signaux de risque et déséquilibre financier.</h1>
+</section>
+
+<section class="tabs stagger">
+  <button class="tab-btn active" data-tab="axis1">Axe 1 - Comprendre le portefeuille</button>
+  <button class="tab-btn" data-tab="axis2">Axe 2 - Premiers signaux de risque</button>
+  <button class="tab-btn" data-tab="axis3">Axe 3 - Dette, facturation, remboursement</button>
+  <button class="tab-btn" data-tab="stack">Stack technique</button>
+</section>
+
+<section id="axis1" class="tab-panel active stagger">
+  <section class="kpis">
+    <article><span>Nombre de clients</span><strong>{{ metrics.clients }}</strong></article>
+    <article><span>Taux de défaut</span><strong>{{ metrics.default_rate }}</strong></article>
+    <article><span>Nb défauts</span><strong>{{ metrics.n_defaults }}</strong></article>
+    <article><span>Crédit moyen</span><strong>{{ metrics.credit_mean }}</strong></article>
+    <article><span>Crédit médian</span><strong>{{ metrics.credit_median }}</strong></article>
+    <article><span>Âge moyen</span><strong>{{ metrics.age_mean }}</strong></article>
+    <article><span>Âge médian</span><strong>{{ metrics.age_median }}</strong></article>
+  </section>
+
+  <section class="charts">
+    <article class="panel chart-card">{{ charts.axis1_target|safe }}
+      <div class="chart-note"><strong>Question métier:</strong> Le défaut est-il fréquent ?<br><strong>Lecture:</strong> Le portefeuille est déséquilibré, la classe défaut est minoritaire.</div>
+    </article>
+    <article class="panel chart-card">{{ charts.axis1_limit|safe }}
+      <div class="chart-note"><strong>Question métier:</strong> Les faibles crédits défautent-ils plus ?<br><strong>Lecture:</strong> L'exposition seule n'explique pas tout; le comportement reste central.</div>
+    </article>
+    <article class="panel chart-card">{{ charts.axis1_age|safe }}
+      <div class="chart-note"><strong>Question métier:</strong> L'âge segmente-t-il le risque ?<br><strong>Lecture:</strong> Le signal âge existe mais reste secondaire face aux variables de paiement.</div>
+    </article>
+    <article class="panel chart-card">{{ charts.axis1_sex|safe }}
+      <div class="chart-note"><strong>Question métier:</strong> Le genre discrimine-t-il fortement ?<br><strong>Lecture:</strong> Les écarts observés sont limités, variable descriptive secondaire.</div>
+    </article>
+    <article class="panel chart-card">{{ charts.axis1_edu|safe }}
+      <div class="chart-note"><strong>Question métier:</strong> L'éducation explique-t-elle le défaut ?<br><strong>Lecture:</strong> Différences visibles mais moins fortes que les retards de paiement.</div>
+    </article>
+    <article class="panel chart-card">{{ charts.axis1_marriage|safe }}
+      <div class="chart-note"><strong>Question métier:</strong> Le statut marital est-il déterminant ?<br><strong>Lecture:</strong> Signal faible, utile en contexte mais non prioritaire.</div>
+    </article>
+  </section>
+  <section class="panel axis-summary">
+    <h2>Synthèse Axe 1</h2>
+    <ul>
+      <li>Le portefeuille est déséquilibré: la classe défaut est minoritaire.</li>
+      <li>Les variables socio-démographiques donnent du contexte mais peu de pouvoir explicatif fort.</li>
+      <li>La suite de l'analyse doit se concentrer sur les comportements de paiement.</li>
+    </ul>
+  </section>
+</section>
+
+<section id="axis2" class="tab-panel stagger">
+  <section class="charts">
+    <article class="panel chart-card">{{ charts.axis2_pay0|safe }}
+      <div class="chart-note"><strong>Question métier:</strong> Le dernier statut de paiement est-il critique ?<br><strong>Lecture:</strong> Le risque grimpe fortement dès l'apparition d'un retard récent.</div>
+    </article>
+    <article class="panel chart-card">{{ charts.axis2_heatmap|safe }}
+      <div class="chart-note"><strong>Question métier:</strong> Retard ponctuel ou persistant ?<br><strong>Lecture:</strong> Les défauteurs cumulent des retards plus élevés sur plusieurs périodes.</div>
+    </article>
+    <article class="panel chart-card">{{ charts.axis2_evolution|safe }}
+      <div class="chart-note"><strong>Question métier:</strong> Comment évolue le retard dans le temps ?<br><strong>Lecture:</strong> Les trajectoires défaut/non défaut se séparent clairement mois après mois.</div>
+    </article>
+    <article class="panel chart-card">{{ charts.axis2_corr|safe }}
+      <div class="chart-note"><strong>Question métier:</strong> Les retards sont-ils liés entre eux ?<br><strong>Lecture:</strong> Corrélations élevées entre mois proches, signe de persistance du comportement.</div>
+    </article>
+  </section>
+  <section class="panel axis-summary">
+    <h2>Synthèse Axe 2</h2>
+    <ul>
+      <li><code>PAY_0</code> est un signal d'alerte prioritaire.</li>
+      <li>Le défaut se lit comme une dynamique de retards répétés, pas comme un incident isolé.</li>
+      <li>Les variables comportementales dominent les variables descriptives.</li>
+    </ul>
+  </section>
+</section>
+
+<section id="axis3" class="tab-panel stagger">
+  <section class="charts">
+    <article class="panel chart-card">{{ charts.axis3_bill|safe }}
+      <div class="chart-note"><strong>Question métier:</strong> Les défauteurs ont-ils des factures plus lourdes ?<br><strong>Lecture:</strong> Le montant facturé seul n'explique pas entièrement le défaut.</div>
+    </article>
+    <article class="panel chart-card">{{ charts.axis3_payamt|safe }}
+      <div class="chart-note"><strong>Question métier:</strong> Que change le niveau de remboursement ?<br><strong>Lecture:</strong> Les montants remboursés plus faibles sont fortement associés au défaut futur.</div>
+    </article>
+    <article class="panel chart-card">{{ charts.axis3_scatter|safe }}
+      <div class="chart-note"><strong>Question métier:</strong> Le risque vient-il du crédit brut ?<br><strong>Lecture:</strong> Le risque provient surtout du couple crédit/comportement de paiement.</div>
+    </article>
+    <article class="panel chart-card">{{ charts.axis3_repay|safe }}
+      <div class="chart-note"><strong>Question métier:</strong> Le ratio de remboursement est-il un bon indicateur ?<br><strong>Lecture:</strong> Les quantiles les plus faibles concentrent davantage de défauts.</div>
+    </article>
+  </section>
+  <section class="panel axis-summary">
+    <h2>Synthèse Axe 3</h2>
+    <ul>
+      <li>Le défaut est lié au déséquilibre durable entre facturation et remboursement.</li>
+      <li>Le ratio de remboursement apporte un signal opérationnel simple à suivre.</li>
+      <li>La surveillance doit combiner retards récents et tension de remboursement.</li>
+    </ul>
+  </section>
+</section>
+
+<section id="stack" class="tab-panel stagger">
+  <section class="split">
+    <article class="panel">
+      <h2>Stack Technique</h2>
+      <ul>
+        <li>Langage: Python</li>
+        <li>Backend: Flask + Jinja2</li>
+        <li>Data: pandas, numpy</li>
+        <li>Visualisation web: Plotly (express + graph_objects)</li>
+        <li>Lecture Excel: xlrd via pandas.read_excel</li>
+        <li>Frontend: HTML, CSS, JavaScript (onglets + resize)</li>
+        <li>Exploration initiale: Jupyter Notebook</li>
+        <li>Environnement: venv + pip</li>
+        <li>Versioning: Git</li>
+      </ul>
+    </article>
+    <article class="panel">
+      <h2>Techniques Utilisées</h2>
+      <ul>
+        <li>Nettoyage et recodage des variables (SEX, EDUCATION, MARRIAGE, DEFAULT).</li>
+        <li>Feature engineering: <code>n_months_late</code>, <code>avg_bill_amt</code>, <code>avg_pay_amt</code>, <code>repayment_ratio</code>.</li>
+        <li>Analyse narrative en axes avec visualisations interactives.</li>
+        <li>Interface web responsive et orientée storytelling métier.</li>
+      </ul>
+    </article>
+  </section>
+
+  <section class="split">
+    <article class="panel">
+      <h2>Difficultés Rencontrées</h2>
+      <ul>
+        <li>Interprétation métier des variables PAY_0 à PAY_6.</li>
+        <li>Harmonisation des catégories et comparabilité des indicateurs.</li>
+        <li>Gestion de la lisibilité avec beaucoup de graphiques.</li>
+        <li>Maintien des performances avec des graphiques interactifs.</li>
+      </ul>
+    </article>
+    <article class="panel">
+      <h2>Conclusion Générale</h2>
+      <p>Le défaut ne survient pas d'un coup: il s'annonce par des retards récents, se renforce avec leur persistance, puis se confirme quand les remboursements ne suivent plus la facturation. Cette base analytique prépare directement la phase de modélisation.</p>
+    </article>
+  </section>
+
+  <section class="panel">
+    <h2>Variables expliquées</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Variable</th><th>Famille</th><th>Explication</th></tr></thead>
+        <tbody>
+          {% for row in variable_dictionary %}
+            <tr><td><code>{{ row.name }}</code></td><td>{{ row.group }}</td><td>{{ row.description }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+{% endblock %}
