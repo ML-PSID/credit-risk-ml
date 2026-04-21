@@ -21,6 +21,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import chi2_contingency, entropy
+from pathlib import Path
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -32,7 +33,7 @@ plt.rcParams['figure.figsize'] = (14, 6)
 plt.rcParams['font.size'] = 10
 
 # Charger les données (en sautant la première ligne car c'est une description technique)
-file_path = '/Users/perlenkounkou/Documents/Cours 2/PSID/Projet 2/default of credit card clients.xls'
+file_path = Path(__file__).resolve().parents[1] / 'notebook' / 'default of credit card clients.xls'
 df_raw = pd.read_excel(file_path, sheet_name=0, header=1)
 df = df_raw.copy()
 
@@ -846,5 +847,4 @@ print(f"\n🎯 Signal métier : Les variables comportementales dominent les vari
 # 5. **Déploiement** : Scorer clients, segmenter par risque, monitorer dérive
 # 
 # ---
-
 
