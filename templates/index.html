@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Contexte | Taipei 2005 Credit Atlas{% endblock %}
+{% block content %}
+<section class="hero stagger">
+  <p class="eyebrow">Narration analytique</p>
+  <h1>À Taipei en 2005, le défaut se construit avant d'exploser.</h1>
+  <p>Le dashboard suit trois axes. D'abord, une lecture progressive des données pour comprendre les profils clients et les retards. Ensuite, une analyse de la tension entre facturé et remboursé. Enfin, une synthèse des variables les plus importantes pour prédire le défaut.</p>
+  <a class="cta" href="{{ url_for('dashboard') }}">Explorer l'analyse</a>
+</section>
+
+<section class="split stagger">
+  <article class="panel tilt-a">
+    <h2>Objectif</h2>
+    <p>Transformer les données brutes en lecture progressive: profil client, retards, tension facturé/remboursé, puis synthèse des variables importantes.</p>
+  </article>
+  <article class="panel tilt-b">
+    <h2>Dataset UCI</h2>
+    <ul>
+      <li>30 000 observations</li>
+      <li>23 variables explicatives</li>
+      <li>cible binaire: défaut le mois suivant</li>
+      <li>données de avril à septembre 2005</li>
+    </ul>
+  </article>
+</section>
+
+<section class="panel stagger">
+  <h2>Démo Vidéo</h2>
+  <p></p>
+  <div class="video-embed">
+    <iframe
+      src="https://www.youtube.com/embed/VIDEO_ID_A_REMPLACER"
+      title="Demo dashboard credit risk"
+      loading="lazy"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allowfullscreen>
+    </iframe>
+  </div>
+  <p>Si besoin: remplacez <code>VIDEO_ID_A_REMPLACER</code> par l'identifiant de votre vidéo.</p>
+</section>
+{% endblock %}

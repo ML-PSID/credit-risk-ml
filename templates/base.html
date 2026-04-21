@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Taipei Risk Story{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=Literata:opsz,wght@7..72,400;7..72,600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('home') }}">Taipei 2005 Credit Atlas</a>
+    <nav>
+      <a href="{{ url_for('home') }}">Contexte</a>
+      <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    </nav>
+  </header>
+  <main>{% block content %}{% endblock %}</main>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
