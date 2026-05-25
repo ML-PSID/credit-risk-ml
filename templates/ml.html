@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Modèle ML — Taipei Risk Story{% endblock %}
+
+{% block content %}
+<section class="stagger">
+  <p class="eyebrow">Machine Learning</p>
+  <h1>Random Forest<br>Classifier</h1>
+  <p>Random Forest entraîné sur 80 % du jeu de données (split stratifié), avec <code>class_weight="balanced"</code> pour
+    corriger le déséquilibre de classes (≈ 22 % de défauts). Toutes les variables dérivées de l'analyse DataViz sont
+    réutilisées comme features.</p>
+</section>
+
+<!-- KPI cards -->
+<div class="kpis stagger">
+  <article>
+    <span>Accuracy</span>
+    <strong>{{ metrics.accuracy }}</strong>
+  </article>
+  <article>
+    <span>Précision (cl. 1)</span>
+    <strong>{{ metrics.precision }}</strong>
+  </article>
+  <article>
+    <span>Rappel (cl. 1)</span>
+    <strong>{{ metrics.recall }}</strong>
+  </article>
+  <article>
+    <span>F1-Score (cl. 1)</span>
+    <strong>{{ metrics.f1 }}</strong>
+  </article>
+  <article>
+    <span>AUC-ROC</span>
+    <strong>{{ metrics.auc_roc }}</strong>
+  </article>
+  <article>
+    <span>Obs. Train</span>
+    <strong>{{ metrics.n_train }}</strong>
+  </article>
+  <article>
+    <span>Obs. Test</span>
+    <strong>{{ metrics.n_test }}</strong>
+  </article>
+</div>
+
+<!-- Tabs -->
+<div class="tabs stagger">
+  <button class="tab-btn active" data-tab="tab-results">Résultats</button>
+  <button class="tab-btn" data-tab="tab-model">Analyse du modèle</button>
+  <button class="tab-btn" data-tab="tab-learning">Courbe d'apprentissage</button>
+  <button class="tab-btn" data-tab="tab-approach">Approche &amp; Paramètres</button>
+</div>
+
+<!-- Tab 1 : Résultats -->
+<div id="tab-results" class="tab-panel active">
+  <div class="charts">
+    <div class="panel tilt-a chart-card">
+      {{ charts.confusion|safe }}
+      <p class="chart-note">La matrice de confusion révèle comment le modèle distingue les défauts réels des
+        non-défauts. Les Vrais Positifs (VP) et Vrais Négatifs (VN) mesurent les bonnes prédictions ; les Faux Négatifs
+        (FN) — défauts non détectés — sont les plus coûteux en risque crédit.</p>
+    </div>
+    <div class="panel tilt-b chart-card">
+      {{ charts.scores|safe }}
+      <p class="chart-note">Comparaison visuelle des 5 métriques clés sur l'ensemble de test. L'AUC-ROC mesure la
+        capacité de discrimination globale, indépendamment du seuil de décision à 0,5.</p>
+    </div>
+  </div>
+  <div class="charts">
+    <div class="panel full chart-card">
+      {{ charts.proba_dist|safe }}
+      <p class="chart-note">Distribution des probabilités prédites pour chaque classe réelle. Une bonne séparation entre
+        les deux distributions indique un modèle discriminant. Les cas proches de 0,5 sont les plus incertains.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 2 : Analyse du modèle -->
+<div id="tab-model" class="tab-panel">
+  <div class="charts">
+    <div class="panel full chart-card">
+      {{ charts.importance|safe }}
+      <p class="chart-note">Importance par impureté de Gini (moyenne sur les 200 arbres). Les variables dérivées
+        <strong>avg_pay_delay</strong>, <strong>max_pay_delay</strong>, <strong>n_months_late</strong> et
+        <strong>repayment_ratio</strong> — issues de l'analyse DataViz — figurent systématiquement parmi les plus
+        discriminantes, confirmant la cohérence des deux phases du projet.
+      </p>
+    </div>
+  </div>
+  <div class="charts">
+    <div class="panel tilt-a chart-card">
+      {{ charts.roc|safe }}
+      <p class="chart-note">La courbe ROC trace le taux de vrais positifs contre le taux de faux positifs pour tous les
+        seuils. L'aire sous la courbe (AUC) résume la performance de discrimination : 1,0 = parfait, 0,5 = aléatoire.
+      </p>
+    </div>
+    <div class="panel tilt-b chart-card">
+      {{ charts.pr|safe }}
+      <p class="chart-note">La courbe Précision-Rappel est particulièrement pertinente sur données déséquilibrées. La
+        Average Precision (AP) agrège les résultats à tous les seuils. La ligne pointillée représente le taux de défaut
+        de base (≈ 22 %).</p>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 3 : Courbe d'apprentissage -->
+<div id="tab-learning" class="tab-panel">
+  <div class="charts">
+    <div class="panel full chart-card">
+      {{ charts.learning|safe }}
+      <p class="chart-note">Calculée avec 50 arbres (au lieu de 200) sur 5 fractions du jeu d'entraînement (20 % → 100
+        %). La convergence entre les scores train et test indique que le modèle généralise bien et qu'augmenter le jeu
+        de données apporterait peu de gain supplémentaire.</p>
+    </div>
+  </div>
+  <div class="split stagger">
+    <div class="panel tilt-a">
+      <p class="eyebrow" style="font-size:.78rem;">Interprétation</p>
+      <p>Si les deux courbes convergent rapidement et se stabilisent à une valeur élevée, le modèle n'est ni en
+        sous-apprentissage ni en sur-apprentissage. Un écart persistant entre train et test indiquerait un
+        sur-apprentissage à corriger (réduction de <code>max_depth</code> ou augmentation de
+        <code>min_samples_leaf</code>).
+      </p>
+    </div>
+    <div class="panel tilt-b">
+      <p class="eyebrow" style="font-size:.78rem;">Pistes d'amélioration</p>
+      <ul>
+        <li>Optimisation des hyperparamètres (GridSearchCV / RandomizedSearchCV)</li>
+        <li>Seuil de décision personnalisé (ex. 0,35 pour maximiser le rappel)</li>
+        <li>SHAP values pour l'explicabilité individuelle</li>
+        <li>Gradient Boosting (XGBoost, LightGBM) en comparaison</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 4 : Approche & Paramètres -->
+<div id="tab-approach" class="tab-panel">
+  <div class="split stagger">
+    <div class="panel tilt-a">
+      <p class="eyebrow" style="font-size:.78rem;">Hyperparamètres du modèle</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Paramètre</th>
+            <th>Valeur</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>n_estimators</td>
+            <td>200</td>
+          </tr>
+          <tr>
+            <td>max_depth</td>
+            <td>12</td>
+          </tr>
+          <tr>
+            <td>min_samples_leaf</td>
+            <td>5</td>
+          </tr>
+          <tr>
+            <td>max_features</td>
+            <td>sqrt</td>
+          </tr>
+          <tr>
+            <td>class_weight</td>
+            <td>balanced</td>
+          </tr>
+          <tr>
+            <td>random_state</td>
+            <td>42</td>
+          </tr>
+          <tr>
+            <td>Split test</td>
+            <td>20 % (stratifié)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel tilt-b">
+      <p class="eyebrow" style="font-size:.78rem;">Gestion du déséquilibre de classes</p>
+      <p>Le jeu de données présente ≈ 78 % de non-défauts contre ≈ 22 % de défauts. Sans correction, un classifieur naïf
+        prédirait systématiquement "no default" en atteignant 78 % d'accuracy sans rien détecter.</p>
+      <p><code>class_weight="balanced"</code> attribue à chaque classe un poids inversement proportionnel à sa fréquence
+        :</p>
+      <p style="font-family:'JetBrains Mono',monospace; font-size:.88rem; color:#ffd166;">w_k = n_total / (n_classes ×
+        n_k)</p>
+      <p>Classe 0 (78 %) → poids faible · Classe 1 (22 %) → poids élevé. Cela force le modèle à "pénaliser" davantage
+        les erreurs sur les défauts.</p>
+    </div>
+  </div>
+  <div class="split stagger">
+    <div class="panel tilt-a">
+      <p class="eyebrow" style="font-size:.78rem;">Variables utilisées (30 features)</p>
+      <p><strong>Catégorielles (OrdinalEncoder) :</strong> SEX, EDUCATION, MARRIAGE</p>
+      <p><strong>Numériques brutes :</strong> LIMIT_BAL, AGE, PAY_0..PAY_6, BILL_AMT1..6, PAY_AMT1..6</p>
+      <p><strong>Variables dérivées (DataViz) :</strong> avg_pay_delay, max_pay_delay, n_months_late, avg_bill_amt,
+        avg_pay_amt, credit_utilization, repayment_ratio</p>
+    </div>
+    <div class="panel tilt-b">
+      <p class="eyebrow" style="font-size:.78rem;">Cohérence avec l'analyse DataViz</p>
+      <p>Les 3 axes explorés dans le Dashboard (profil client, historique de paiement, capacité de remboursement) se
+        retrouvent directement dans le top des features importantes :</p>
+      <ul>
+        <li><strong>Axe 2</strong> (retards) → PAY_0, avg_pay_delay, max_pay_delay dominent</li>
+        <li><strong>Axe 3</strong> (remboursement) → repayment_ratio, avg_bill_amt confirment leur pouvoir prédictif
+        </li>
+        <li><strong>Axe 1</strong> (profil) → LIMIT_BAL, AGE apportent un signal complémentaire</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

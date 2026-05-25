@@ -5,6 +5,7 @@ from pathlib import Path
 from flask import Flask, render_template
 
 from analysis_web import build_storypack
+from ml_web import build_ml_pack
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -27,6 +28,12 @@ def dashboard() -> str:
         variable_dictionary=pack.variable_dictionary,
         charts=pack.charts,
     )
+
+
+@app.route("/ml")
+def ml() -> str:
+    pack = build_ml_pack(str(DATASET))
+    return render_template("ml.html", metrics=pack.metrics, charts=pack.charts)
 
 
 if __name__ == "__main__":
