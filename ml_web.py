@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 from sklearn.base import clone
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
@@ -28,7 +29,8 @@ from sklearn.model_selection import (
     cross_validate,
     train_test_split,
 )
-from sklearn.preprocessing import OrdinalEncoder
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import OrdinalEncoder, StandardScaler
 
 from analysis_web import load_clean_data
 
@@ -59,6 +61,10 @@ PARAM_DIST = {
     "min_samples_split": [2, 5],
 }
 
+RL_PARAM_DIST = {
+    "logisticregression__C": [0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0],
+}
+
 DARK_LAYOUT = dict(
     template="plotly_dark",
     paper_bgcolor="rgba(0,0,0,0)",
@@ -73,8 +79,10 @@ DARK_LAYOUT = dict(
 @dataclass
 class MLPack:
     metrics: dict[str, str]
+    rl_metrics: dict[str, str]
     charts: dict[str, str]
     best_params: dict[str, str]
+    rl_best_params: dict[str, str]
 
 
 def _to_plot(fig: Any, height: int = 420) -> str:
@@ -136,6 +144,24 @@ def _chart_confusion_matrix(y_test: np.ndarray, y_pred: np.ndarray) -> str:
     return _to_plot(fig, height=400)
 
 
+def _chart_rl_confusion_matrix(y_test: np.ndarray, y_pred: np.ndarray) -> str:
+    cm = confusion_matrix(y_test, y_pred)
+    labels = ["No Default (0)", "Default (1)"]
+    annotations = [
+        [f"VN<br>{cm[0,0]:,}", f"FP<br>{cm[0,1]:,}"],
+        [f"FN<br>{cm[1,0]:,}", f"VP<br>{cm[1,1]:,}"],
+    ]
+    fig = go.Figure(go.Heatmap(
+        z=cm, x=labels, y=labels,
+        text=annotations, texttemplate="%{text}",
+        colorscale=[[0, "#163044"], [0.5, "rgba(0,184,148,0.55)"], [1, "#00b894"]],
+        showscale=False,
+        hovertemplate="Réel: %{y}<br>Prédit: %{x}<br>N = %{z}<extra></extra>",
+    ))
+    fig.update_layout(title="Matrice de Confusion — Régression Logistique", xaxis_title="Prédit", yaxis_title="Réel")
+    return _to_plot(fig, height=400)
+
+
 def _chart_feature_importance(model: RandomForestClassifier, feature_names: list[str]) -> str:
     importances = model.feature_importances_
     idx = np.argsort(importances)[::-1][:20]
@@ -160,12 +186,79 @@ def _chart_feature_importance(model: RandomForestClassifier, feature_names: list
     return _to_plot(fig, height=540)
 
 
+def _chart_rl_coefficients(model: Any, feature_names: list[str]) -> str:
+    coefs = model.named_steps["logisticregression"].coef_[0]
+    idx = np.argsort(np.abs(coefs))[::-1][:20]
+    names = [feature_names[i] for i in idx]
+    vals = coefs[idx]
+    colors = ["#00b894" if v > 0 else "#ff6a3d" for v in vals]
+
+    fig = go.Figure(go.Bar(
+        x=vals[::-1], y=names[::-1], orientation="h",
+        marker_color=colors[::-1],
+        hovertemplate="%{y}: %{x:.4f}<extra></extra>",
+    ))
+    fig.update_layout(
+        title="Top 20 — Coefficients de la Régression Logistique<br><sup>Vert : augmente le risque prédit, orange : le réduit</sup>",
+        xaxis_title="Coefficient standardisé",
+    )
+    return _to_plot(fig, height=540)
+
+
 def _chart_roc(y_test: np.ndarray, y_proba: np.ndarray, auc: float) -> str:
     fpr, tpr, _ = roc_curve(y_test, y_proba)
     fig = go.Figure()
     fig.add_scatter(x=fpr, y=tpr, mode="lines", line=dict(color="#ff6a3d", width=2.5), name=f"RF (AUC = {auc:.3f})")
     fig.add_scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(color="#c9c4b5", dash="dash", width=1), name="Aléatoire")
     fig.update_layout(title="Courbe ROC", xaxis_title="Taux de Faux Positifs", yaxis_title="Taux de Vrais Positifs", legend=dict(x=0.55, y=0.1))
+    return _to_plot(fig, height=420)
+
+
+def _chart_model_comparison(rf_scores: dict[str, float], rl_scores: dict[str, float]) -> str:
+    metrics_names = ["Accuracy", "Précision", "Rappel", "F1-Score", "AUC-ROC"]
+    keys = ["accuracy", "precision", "recall", "f1", "auc_roc"]
+    fig = go.Figure()
+    fig.add_bar(
+        name="Random Forest",
+        x=metrics_names,
+        y=[rf_scores[k] for k in keys],
+        marker_color="#ff6a3d",
+        text=[f"{rf_scores[k]:.3f}" for k in keys],
+        textposition="outside",
+    )
+    fig.add_bar(
+        name="Régression Logistique",
+        x=metrics_names,
+        y=[rl_scores[k] for k in keys],
+        marker_color="#00b894",
+        text=[f"{rl_scores[k]:.3f}" for k in keys],
+        textposition="outside",
+    )
+    fig.update_layout(
+        barmode="group",
+        title="Comparaison des Algorithmes<br><sup>Même split, mêmes features, seuil optimisé pour chaque modèle</sup>",
+        yaxis=dict(range=[0, 1.1], title="Score"),
+    )
+    return _to_plot(fig, height=430)
+
+
+def _chart_roc_comparison(y_test: np.ndarray, rf_proba: np.ndarray, rf_auc: float, rl_proba: np.ndarray, rl_auc: float) -> str:
+    rf_fpr, rf_tpr, _ = roc_curve(y_test, rf_proba)
+    rl_fpr, rl_tpr, _ = roc_curve(y_test, rl_proba)
+    fig = go.Figure()
+    fig.add_scatter(x=rf_fpr, y=rf_tpr, mode="lines", line=dict(color="#ff6a3d", width=2.5), name=f"Random Forest (AUC = {rf_auc:.3f})")
+    fig.add_scatter(x=rl_fpr, y=rl_tpr, mode="lines", line=dict(color="#00b894", width=2.5), name=f"Régression Logistique (AUC = {rl_auc:.3f})")
+    fig.add_scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(color="#c9c4b5", dash="dash", width=1), name="Aléatoire")
+    fig.update_layout(title="Courbes ROC — Comparaison", xaxis_title="Taux de Faux Positifs", yaxis_title="Taux de Vrais Positifs", legend=dict(x=0.42, y=0.1))
+    return _to_plot(fig, height=420)
+
+
+def _chart_rl_roc(y_test: np.ndarray, y_proba: np.ndarray, auc: float) -> str:
+    fpr, tpr, _ = roc_curve(y_test, y_proba)
+    fig = go.Figure()
+    fig.add_scatter(x=fpr, y=tpr, mode="lines", line=dict(color="#00b894", width=2.5), name=f"RL (AUC = {auc:.3f})")
+    fig.add_scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(color="#c9c4b5", dash="dash", width=1), name="Aléatoire")
+    fig.update_layout(title="Courbe ROC — Régression Logistique", xaxis_title="Taux de Faux Positifs", yaxis_title="Taux de Vrais Positifs", legend=dict(x=0.55, y=0.1))
     return _to_plot(fig, height=420)
 
 
@@ -189,6 +282,24 @@ def _chart_precision_recall(y_test: np.ndarray, y_proba: np.ndarray, threshold: 
     return _to_plot(fig, height=420)
 
 
+def _chart_rl_precision_recall(y_test: np.ndarray, y_proba: np.ndarray, threshold: float) -> str:
+    precision, recall, thresholds = precision_recall_curve(y_test, y_proba)
+    ap = average_precision_score(y_test, y_proba)
+    baseline = y_test.mean()
+    idx = int(np.argmin(np.abs(thresholds - threshold))) if len(thresholds) > 0 else 0
+
+    fig = go.Figure()
+    fig.add_scatter(x=recall, y=precision, mode="lines", line=dict(color="#00b894", width=2.5), name=f"RL (AP = {ap:.3f})")
+    fig.add_scatter(
+        x=[recall[idx]], y=[precision[idx]], mode="markers",
+        marker=dict(color="#ffd166", size=12, symbol="star"),
+        name=f"Seuil optimal ({threshold:.2f})",
+    )
+    fig.add_hline(y=baseline, line_dash="dash", line_color="#c9c4b5", annotation_text=f"Baseline ({baseline:.2f})")
+    fig.update_layout(title="Courbe Précision-Rappel — Régression Logistique", xaxis_title="Rappel", yaxis_title="Précision", legend=dict(x=0.4, y=0.9))
+    return _to_plot(fig, height=420)
+
+
 def _chart_scores_bar(acc: float, prec: float, rec: float, f1: float, auc: float) -> str:
     metrics_names = ["Accuracy", "Précision", "Rappel", "F1-Score", "AUC-ROC"]
     values = [acc, prec, rec, f1, auc]
@@ -202,12 +313,38 @@ def _chart_scores_bar(acc: float, prec: float, rec: float, f1: float, auc: float
     return _to_plot(fig, height=400)
 
 
+def _chart_rl_scores_bar(acc: float, prec: float, rec: float, f1: float, auc: float) -> str:
+    metrics_names = ["Accuracy", "Précision", "Rappel", "F1-Score", "AUC-ROC"]
+    values = [acc, prec, rec, f1, auc]
+    colors = ["#00b894", "#ffd166", "#ff6a3d", "#0984e3", "#6c5ce7"]
+    fig = go.Figure(go.Bar(
+        x=metrics_names, y=values, marker_color=colors,
+        text=[f"{v:.3f}" for v in values], textposition="outside",
+        hovertemplate="%{x}: %{y:.4f}<extra></extra>",
+    ))
+    fig.update_layout(title="Synthèse des Métriques — Régression Logistique", yaxis=dict(range=[0, 1.1], title="Score"))
+    return _to_plot(fig, height=400)
+
+
 def _chart_proba_dist(y_test: np.ndarray, y_proba: np.ndarray, threshold: float) -> str:
     df_plot = pd.DataFrame({"proba": y_proba, "classe": np.where(y_test == 1, "Default (1)", "No Default (0)")})
     fig = px.histogram(
         df_plot, x="proba", color="classe", nbins=60, barmode="overlay", opacity=0.72,
         color_discrete_map={"Default (1)": "#ff6a3d", "No Default (0)": "#00b894"},
         title="Distribution des Probabilités Prédites",
+        labels={"proba": "P(défaut)", "classe": "Classe réelle"},
+    )
+    fig.add_vline(x=threshold, line_dash="dash", line_color="#ffd166", annotation_text=f"Seuil optimal ({threshold:.2f})")
+    fig.update_layout(xaxis_title="Probabilité de défaut prédite", yaxis_title="Nombre d'observations")
+    return _to_plot(fig, height=400)
+
+
+def _chart_rl_proba_dist(y_test: np.ndarray, y_proba: np.ndarray, threshold: float) -> str:
+    df_plot = pd.DataFrame({"proba": y_proba, "classe": np.where(y_test == 1, "Default (1)", "No Default (0)")})
+    fig = px.histogram(
+        df_plot, x="proba", color="classe", nbins=60, barmode="overlay", opacity=0.72,
+        color_discrete_map={"Default (1)": "#ff6a3d", "No Default (0)": "#00b894"},
+        title="Distribution des Probabilités Prédites — Régression Logistique",
         labels={"proba": "P(défaut)", "classe": "Classe réelle"},
     )
     fig.add_vline(x=threshold, line_dash="dash", line_color="#ffd166", annotation_text=f"Seuil optimal ({threshold:.2f})")
@@ -240,6 +377,31 @@ def _chart_cv_scores(cv_scores: dict) -> str:
     return _to_plot(fig, height=460)
 
 
+def _chart_rl_cv_scores(cv_scores: dict) -> str:
+    folds = [f"Fold {i+1}" for i in range(5)]
+    metrics_map = {
+        "Rappel": cv_scores["test_recall"],
+        "Précision": cv_scores["test_precision"],
+        "F1": cv_scores["test_f1"],
+        "AUC-ROC": cv_scores["test_auc_roc"],
+    }
+    colors = {"Rappel": "#ff6a3d", "Précision": "#ffd166", "F1": "#00b894", "AUC-ROC": "#6c5ce7"}
+
+    fig = go.Figure()
+    for name, scores in metrics_map.items():
+        fig.add_bar(name=name, x=folds, y=scores.tolist(), marker_color=colors[name],
+                    text=[f"{s:.3f}" for s in scores], textposition="outside")
+        fig.add_hline(y=float(scores.mean()), line_dash="dot", line_color=colors[name], opacity=0.6,
+                      annotation_text=f"moy. {name} {scores.mean():.3f}", annotation_position="right")
+
+    fig.update_layout(
+        barmode="group",
+        title="Validation Croisée Stratifiée — Régression Logistique",
+        yaxis=dict(range=[0, 1.1], title="Score"),
+    )
+    return _to_plot(fig, height=460)
+
+
 def _chart_learning_curve(
     X_train: np.ndarray, X_test: np.ndarray,
     y_train: np.ndarray, y_test: np.ndarray,
@@ -262,6 +424,34 @@ def _chart_learning_curve(
     fig.add_scatter(x=sizes, y=train_scores, mode="lines+markers", name="Train AUC", line=dict(color="#ffd166", width=2), marker=dict(size=7))
     fig.add_scatter(x=sizes, y=test_scores, mode="lines+markers", name="Test AUC", line=dict(color="#00b894", width=2), marker=dict(size=7))
     fig.update_layout(title="Courbe d'Apprentissage (AUC-ROC)", xaxis_title="Taille de l'ensemble d'entraînement", yaxis_title="AUC-ROC", legend=dict(x=0.65, y=0.1))
+    return _to_plot(fig, height=420)
+
+
+def _chart_rl_learning_curve(
+    X_train: np.ndarray, X_test: np.ndarray,
+    y_train: np.ndarray, y_test: np.ndarray,
+    best_c: float,
+) -> str:
+    fractions = [0.2, 0.4, 0.6, 0.8, 1.0]
+    train_scores, test_scores = [], []
+
+    for frac in fractions:
+        n = max(int(len(X_train) * frac), 50)
+        idx = np.random.default_rng(42).choice(len(X_train), size=n, replace=False)
+        Xtr, ytr = X_train[idx], y_train[idx]
+        clf = make_pipeline(
+            StandardScaler(),
+            LogisticRegression(C=best_c, class_weight="balanced", max_iter=2000, random_state=42),
+        )
+        clf.fit(Xtr, ytr)
+        train_scores.append(roc_auc_score(ytr, clf.predict_proba(Xtr)[:, 1]))
+        test_scores.append(roc_auc_score(y_test, clf.predict_proba(X_test)[:, 1]))
+
+    sizes = [int(len(X_train) * f) for f in fractions]
+    fig = go.Figure()
+    fig.add_scatter(x=sizes, y=train_scores, mode="lines+markers", name="Train AUC", line=dict(color="#ffd166", width=2), marker=dict(size=7))
+    fig.add_scatter(x=sizes, y=test_scores, mode="lines+markers", name="Test AUC", line=dict(color="#00b894", width=2), marker=dict(size=7))
+    fig.update_layout(title="Courbe d'Apprentissage RL (AUC-ROC)", xaxis_title="Taille de l'ensemble d'entraînement", yaxis_title="AUC-ROC", legend=dict(x=0.65, y=0.1))
     return _to_plot(fig, height=420)
 
 
@@ -301,11 +491,42 @@ def build_ml_pack(dataset_path: str) -> MLPack:
     f1 = f1_score(y_test, y_pred, zero_division=0)
     auc = roc_auc_score(y_test, y_proba)
 
+    # Deuxième algorithme : Régression Logistique pondérée — même logique d'optimisation
+    rl_search = RandomizedSearchCV(
+        make_pipeline(
+            StandardScaler(),
+            LogisticRegression(class_weight="balanced", max_iter=2000, random_state=42),
+        ),
+        param_distributions=RL_PARAM_DIST,
+        n_iter=len(RL_PARAM_DIST["logisticregression__C"]),
+        scoring="recall",
+        cv=StratifiedKFold(n_splits=3, shuffle=True, random_state=42),
+        random_state=42,
+        refit=True,
+        n_jobs=-1,
+    )
+    rl_search.fit(X_train, y_train)
+    rl_model = rl_search.best_estimator_
+    rl_proba = rl_model.predict_proba(X_test)[:, 1]
+    rl_threshold = _find_optimal_threshold(y_test, rl_proba, min_precision=0.42)
+    rl_pred = (rl_proba >= rl_threshold).astype(int)
+    rl_acc = accuracy_score(y_test, rl_pred)
+    rl_prec = precision_score(y_test, rl_pred, zero_division=0)
+    rl_rec = recall_score(y_test, rl_pred, zero_division=0)
+    rl_f1 = f1_score(y_test, rl_pred, zero_division=0)
+    rl_auc = roc_auc_score(y_test, rl_proba)
+
     # Validation croisée stratifiée 5 folds sur l'ensemble complet
     cv_model = clone(model)
     cv_model.set_params(n_jobs=1)
     cv_scores = cross_validate(
         cv_model, X, y,
+        cv=cv_strat,
+        scoring={"recall": "recall", "precision": "precision", "f1": "f1", "auc_roc": "roc_auc"},
+        n_jobs=-1,
+    )
+    rl_cv_scores = cross_validate(
+        clone(rl_model), X, y,
         cv=cv_strat,
         scoring={"recall": "recall", "precision": "precision", "f1": "f1", "auc_roc": "roc_auc"},
         n_jobs=-1,
@@ -317,6 +538,12 @@ def build_ml_pack(dataset_path: str) -> MLPack:
     best_params["class_weight"] = "balanced"
     best_params["seuil_decision"] = f"{best_threshold:.2f}"
 
+    rl_bp = rl_search.best_params_
+    rl_best_params = {k.replace("logisticregression__", ""): str(v) for k, v in sorted(rl_bp.items())}
+    rl_best_params["class_weight"] = "balanced"
+    rl_best_params["standardisation"] = "StandardScaler"
+    rl_best_params["seuil_decision"] = f"{rl_threshold:.2f}"
+
     metrics = {
         "accuracy": f"{acc:.3f}",
         "precision": f"{prec:.3f}",
@@ -325,6 +552,16 @@ def build_ml_pack(dataset_path: str) -> MLPack:
         "auc_roc": f"{auc:.3f}",
         "threshold": f"{best_threshold:.2f}",
         "cv_recall": f"{cv_scores['test_recall'].mean():.3f} +/- {cv_scores['test_recall'].std():.3f}",
+    }
+
+    rl_metrics = {
+        "accuracy": f"{rl_acc:.3f}",
+        "precision": f"{rl_prec:.3f}",
+        "recall": f"{rl_rec:.3f}",
+        "f1": f"{rl_f1:.3f}",
+        "auc_roc": f"{rl_auc:.3f}",
+        "threshold": f"{rl_threshold:.2f}",
+        "cv_recall": f"{rl_cv_scores['test_recall'].mean():.3f} +/- {rl_cv_scores['test_recall'].std():.3f}",
     }
 
     lc_params = dict(
@@ -339,13 +576,32 @@ def build_ml_pack(dataset_path: str) -> MLPack:
 
     charts = {
         "confusion": _chart_confusion_matrix(y_test, y_pred),
+        "rl_confusion": _chart_rl_confusion_matrix(y_test, rl_pred),
         "importance": _chart_feature_importance(model, feature_names),
+        "rl_coefficients": _chart_rl_coefficients(rl_model, feature_names),
         "roc": _chart_roc(y_test, y_proba, auc),
+        "rl_roc": _chart_rl_roc(y_test, rl_proba, rl_auc),
+        "roc_comparison": _chart_roc_comparison(y_test, y_proba, auc, rl_proba, rl_auc),
         "pr": _chart_precision_recall(y_test, y_proba, best_threshold),
+        "rl_pr": _chart_rl_precision_recall(y_test, rl_proba, rl_threshold),
         "scores": _chart_scores_bar(acc, prec, rec, f1, auc),
+        "rl_scores": _chart_rl_scores_bar(rl_acc, rl_prec, rl_rec, rl_f1, rl_auc),
+        "comparison": _chart_model_comparison(
+            {"accuracy": acc, "precision": prec, "recall": rec, "f1": f1, "auc_roc": auc},
+            {"accuracy": rl_acc, "precision": rl_prec, "recall": rl_rec, "f1": rl_f1, "auc_roc": rl_auc},
+        ),
         "proba_dist": _chart_proba_dist(y_test, y_proba, best_threshold),
+        "rl_proba_dist": _chart_rl_proba_dist(y_test, rl_proba, rl_threshold),
         "learning": _chart_learning_curve(X_train, X_test, y_train, y_test, lc_params),
+        "rl_learning": _chart_rl_learning_curve(
+            X_train,
+            X_test,
+            y_train,
+            y_test,
+            float(rl_search.best_params_["logisticregression__C"]),
+        ),
         "cv": _chart_cv_scores(cv_scores),
+        "rl_cv": _chart_rl_cv_scores(rl_cv_scores),
     }
 
-    return MLPack(metrics=metrics, charts=charts, best_params=best_params)
+    return MLPack(metrics=metrics, rl_metrics=rl_metrics, charts=charts, best_params=best_params, rl_best_params=rl_best_params)
