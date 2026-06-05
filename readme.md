@@ -1,7 +1,7 @@
 # credit-risk-ml
 
 [![Quality and SonarCloud](https://github.com/ML-PSID/credit-risk-ml/actions/workflows/quality-sonar.yml/badge.svg?branch=main)](https://github.com/ML-PSID/credit-risk-ml/actions/workflows/quality-sonar.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=ML-PSID_credit-risk-ml&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ML-PSID_credit-risk-ml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=ml-psid&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ml-psid)
 
 Application Flask (full Python) branchée sur le nettoyage et les variables dérivées déjà définis dans l'analyse existante.
 

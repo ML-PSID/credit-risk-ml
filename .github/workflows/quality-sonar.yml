@@ -38,6 +38,9 @@ jobs:
       - name: Python compile check
         run: python -m py_compile app.py analysis_web.py ml_web.py
 
+      - name: JavaScript syntax check
+        run: node --check static/js/main.js
+
       - name: Flask route smoke tests
         run: |
           python - <<'PY'
@@ -51,7 +54,7 @@ jobs:
           PY
 
       - name: SonarCloud scan
-        uses: SonarSource/sonarqube-scan-action@v7
+        uses: SonarSource/sonarqube-scan-action@v8.1.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
