@@ -20,7 +20,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.stats import chi2_contingency, entropy
+from sklearn.feature_selection import mutual_info_classif
 from pathlib import Path
 import warnings
 warnings.filterwarnings('ignore')
@@ -251,13 +251,13 @@ plt.tight_layout()
 plt.show()
 
 print(f"\n{'='*60}")
-print(f"RÉSUMÉ - Section A : Vue d'ensemble")
+print("RÉSUMÉ - Section A : Vue d'ensemble")
 print(f"{'='*60}")
 print(f"✓ Portefeuille : {n_clients:,} clients")
 print(f"✓ Imbalance : {default_rate:.2%} de défaut ({n_defaults:,} défauteurs)")
 print(f"✓ Exposition moyenne : ${credit_mean:,.0f} (médiane: ${credit_median:,.0f})")
 print(f"✓ Profil d'âge : {age_mean:.1f} ans (médiane: {age_median:.0f} ans)")
-print(f"\nLecture : Le dataset est déséquilibré (~22% de défaut), donc l'accuracy seule sera trompeuse.")
+print("\nLecture : Le dataset est déséquilibré (~22% de défaut), donc l'accuracy seule sera trompeuse.")
 
 # %% [markdown]
 # ## Section B : Profil du Portefeuille
@@ -290,9 +290,9 @@ ax.set_ylim(0, len(df) * 0.85)
 
 # Interprétation
 print("\n📊 Graphe 1 : Répartition de la Cible")
-print(f"  Question : Le défaut est-il fréquent ?")
+print("  Question : Le défaut est-il fréquent ?")
 print(f"  Lecture : {default_rate:.1%} de défaut, {1-default_rate:.1%} sans défaut")
-print(f"  Interprétation : Le dataset est déséquilibré, donc l'accuracy seule sera trompeuse.")
+print("  Interprétation : Le dataset est déséquilibré, donc l'accuracy seule sera trompeuse.")
 
 # 2. Distribution de LIMIT_BAL
 ax = axes[0, 1]
@@ -304,7 +304,7 @@ ax.set_ylabel('Fréquence', fontweight='bold')
 ax.set_title('2. Distribution du Crédit Accordé\n(Les faibles crédits défautent-ils plus ?)', fontweight='bold', fontsize=11)
 ax.legend()
 
-print(f"\n📊 Graphe 2 : Distribution LIMIT_BAL")
+print("\n📊 Graphe 2 : Distribution LIMIT_BAL")
 print(f"  Lecture : Crédit moyen ${credit_mean:,.0f}, concentration autour ${credit_median:,.0f}")
 
 # 3. Distribution d'AGE
@@ -317,7 +317,7 @@ ax.set_ylabel('Fréquence', fontweight='bold')
 ax.set_title('3. Distribution d\'Âge\n(L\'âge aide-t-il à segmenter ?)', fontweight='bold', fontsize=11)
 ax.legend()
 
-print(f"\n📊 Graphe 3 : Distribution AGE")
+print("\n📊 Graphe 3 : Distribution AGE")
 print(f"  Lecture : Âge moyen {age_mean:.1f}, portefeuille concentré entre 28 et 50 ans")
 
 # 4. Taux de défaut par SEX
@@ -334,7 +334,7 @@ for bar in bars:
     ax.text(bar.get_x() + bar.get_width()/2., height,
             f'{height:.1f}%', ha='center', va='bottom', fontsize=10, fontweight='bold')
 
-print(f"\n📊 Graphe 4 : Défaut par Genre")
+print("\n📊 Graphe 4 : Défaut par Genre")
 for sex, rate in sex_default['rate'].items():
     print(f"  {sex}: {rate:.2%}")
 
@@ -374,12 +374,12 @@ plt.tight_layout()
 plt.show()
 
 print(f"\n{'='*60}")
-print(f"RÉSUMÉ - Section B : Profil du Portefeuille")
+print("RÉSUMÉ - Section B : Profil du Portefeuille")
 print(f"{'='*60}")
 print(f"✓ Structure d'exposition : Crédit accordé entre {df['LIMIT_BAL'].min():,}$ et {df['LIMIT_BAL'].max():,}$")
 print(f"✓ Pyramide d'âge : Clients entre {df['AGE'].min()} et {df['AGE'].max()} ans")
 print(f"✓ Composition : {df['SEX'].value_counts().to_dict()}")
-print(f"✓ Signal socio-démo : Modéré (différences < 5 pp sur éducation/mariage)")
+print("✓ Signal socio-démo : Modéré (différences < 5 pp sur éducation/mariage)")
 
 # %% [markdown]
 # ## Section C : Comportement de Paiement
@@ -423,9 +423,9 @@ for i, bar in enumerate(bars):
             f'{height:.0f}%\n(n={int(count)})', ha='center', va='bottom', fontsize=8)
 
 print("\n⭐ Graphe Clef : Taux de Défaut par PAY_0")
-print(f"  Question : Le dernier statut de paiement est-il un signal fort de défaut futur ?")
-print(f"  Lecture : Le risque explose dès qu'un retard récent apparaît")
-print(f"  Interprétation métier : PAY_0 est le signal d'alerte prioritaire pour la segmentation")
+print("  Question : Le dernier statut de paiement est-il un signal fort de défaut futur ?")
+print("  Lecture : Le risque explose dès qu'un retard récent apparaît")
+print("  Interprétation métier : PAY_0 est le signal d'alerte prioritaire pour la segmentation")
 
 # 2. Heatmap PAY_0..PAY_6 vs DEFAULT
 ax = axes[0, 1]
@@ -454,9 +454,9 @@ for i in range(heatmap_data.shape[0]):
         text = ax.text(j, i, f'{heatmap_data[i, j]:.2f}',
                       ha="center", va="center", color="black", fontsize=9, fontweight='bold')
 
-print(f"\n📊 Graphe 2 : Heatmap PAY_0..PAY_6 vs DEFAULT")
-print(f"  Lecture : Les défauteurs accumulent des retards plus fréquents et plus récents")
-print(f"  Signal temporel : Dynamique (retards croissants dans le temps)")
+print("\n📊 Graphe 2 : Heatmap PAY_0..PAY_6 vs DEFAULT")
+print("  Lecture : Les défauteurs accumulent des retards plus fréquents et plus récents")
+print("  Signal temporel : Dynamique (retards croissants dans le temps)")
 
 # 3. Évolution moyenne des retards par mois
 ax = axes[1, 0]
@@ -478,9 +478,9 @@ ax.set_ylabel('Retard moyen (mois)', fontweight='bold')
 ax.set_title('3. Évolution du Retard Moyen par Période\n(Temporalité)', fontweight='bold', fontsize=11)
 ax.legend()
 
-print(f"\n📊 Graphe 3 : Évolution Retard Moyen")
-print(f"  Défauteurs : retards systématiquement plus élevés")
-print(f"  Non-défauteurs : très peu de retard")
+print("\n📊 Graphe 3 : Évolution Retard Moyen")
+print("  Défauteurs : retards systématiquement plus élevés")
+print("  Non-défauteurs : très peu de retard")
 
 # 4. Corrélation entre PAY_*
 ax = axes[1, 1]
@@ -499,18 +499,18 @@ for i in range(corr_pay.shape[0]):
         text = ax.text(j, i, f'{corr_pay.iloc[i, j]:.2f}',
                       ha="center", va="center", color="black", fontsize=8, fontweight='bold')
 
-print(f"\n📊 Graphe 4 : Corrélation PAY_*")
-print(f"  Forte corrélation entre mois adjacents → Retards persistants et prévisibles")
+print("\n📊 Graphe 4 : Corrélation PAY_*")
+print("  Forte corrélation entre mois adjacents → Retards persistants et prévisibles")
 
 plt.tight_layout()
 plt.show()
 
 print(f"\n{'='*60}")
-print(f"RÉSUMÉ - Section C : Comportement de Paiement")
+print("RÉSUMÉ - Section C : Comportement de Paiement")
 print(f"{'='*60}")
-print(f"✓ PAY_0 est le signal discriminant majeur")
-print(f"✓ Les défauteurs accumulent des retards persistants (corr forte)")
-print(f"✓ Variablesclefs : PAY_0, PAY_2, PAY_3 à conserver absolument pour le modèle")
+print("✓ PAY_0 est le signal discriminant majeur")
+print("✓ Les défauteurs accumulent des retards persistants (corr forte)")
+print("✓ Variablesclefs : PAY_0, PAY_2, PAY_3 à conserver absolument pour le modèle")
 
 # %% [markdown]
 # ## Section D : Exposition Financière et Remboursement
@@ -564,7 +564,7 @@ ax.set_yscale('symlog')
 ax.grid(axis='y', alpha=0.3)
 
 print("\n📊 Graphe 1 : Boxplots BILL_AMT par classe")
-print(f"  Observation : Factures légèrement plus élevées chez défauteurs")
+print("  Observation : Factures légèrement plus élevées chez défauteurs")
 
 # 2. Boxplot PAY_AMT1..6 par classe
 ax = axes[0, 1]
@@ -590,8 +590,8 @@ ax.set_title('2. Distribution des Remboursements (PAY_AMT1..6)\npar Classe', fon
 ax.set_yscale('symlog')
 ax.grid(axis='y', alpha=0.3)
 
-print(f"\n📊 Graphe 2 : Boxplots PAY_AMT par classe")
-print(f"  Observation : Remboursements beaucoup plus faibles chez défauteurs → Signal de capacité")
+print("\n📊 Graphe 2 : Boxplots PAY_AMT par classe")
+print("  Observation : Remboursements beaucoup plus faibles chez défauteurs → Signal de capacité")
 
 # 3. Scatter LIMIT_BAL vs avg_bill_amt
 ax = axes[1, 0]
@@ -606,8 +606,8 @@ ax.set_title('3. Relation Crédit vs Facturation Moyenne\n(Couple crédit/compor
 ax.legend()
 ax.grid(alpha=0.3)
 
-print(f"\n📊 Graphe 3 : Scatter LIMIT_BAL vs avg_bill_amt")
-print(f"  Observation : Risque non lié au montant absolu mais au comportement")
+print("\n📊 Graphe 3 : Scatter LIMIT_BAL vs avg_bill_amt")
+print("  Observation : Risque non lié au montant absolu mais au comportement")
 
 # 4. ⭐ Taux de défaut par quantile de repayment_ratio
 ax = axes[1, 1]
@@ -632,21 +632,21 @@ for bar in bars:
     ax.text(bar.get_x() + bar.get_width()/2., height + 1,
             f'{height:.0f}%', ha='center', va='bottom', fontsize=10, fontweight='bold')
 
-print(f"\n⭐ Graphe Clef 4 : Taux de Défaut par Repayment_Ratio")
-print(f"  Question : Le risque dépend-il de la capacité à rembourser les montants facturés ?")
-print(f"  Lecture : Les clients à faible ratio de remboursement présentent un risque plus élevé")
-print(f"  Interprétation métier : Le risque vient moins du volume brut que d'un déséquilibre durable")
+print("\n⭐ Graphe Clef 4 : Taux de Défaut par Repayment_Ratio")
+print("  Question : Le risque dépend-il de la capacité à rembourser les montants facturés ?")
+print("  Lecture : Les clients à faible ratio de remboursement présentent un risque plus élevé")
+print("  Interprétation métier : Le risque vient moins du volume brut que d'un déséquilibre durable")
 
 plt.tight_layout()
 plt.show()
 
 print(f"\n{'='*60}")
-print(f"RÉSUMÉ - Section D : Exposition Financière")
+print("RÉSUMÉ - Section D : Exposition Financière")
 print(f"{'='*60}")
 print(f"✓ Factures : Moyenne ${df['avg_bill_amt'].mean():,.0f} (défauteurs plus exposés)")
 print(f"✓ Remboursement : Moyenne ${df['avg_pay_amt'].mean():,.0f} (défauteurs paient moins)")
 print(f"✓ Ratio remboursement : {df['repayment_ratio'].mean():.2f} en moyenne")
-print(f"✓ Variables dérivées à créer : avg_bill_amt, avg_pay_amt, repayment_ratio, credit_utilization")
+print("✓ Variables dérivées à créer : avg_bill_amt, avg_pay_amt, repayment_ratio, credit_utilization")
 
 # %% [markdown]
 # ## Section E : Variables Pertinentes - Préparation à la Modélisation
@@ -662,8 +662,6 @@ print(f"✓ Variables dérivées à créer : avg_bill_amt, avg_pay_amt, repaymen
 
 # %%
 # Calcul du Mutual Information pour chaque variable
-from sklearn.feature_selection import mutual_info_classif
-
 # Préparer les données (numériques et catégoriques converties)
 X_numeric = df.select_dtypes(include=[np.number]).drop(['DEFAULT', 'repayment_quantile'], axis=1, errors='ignore')
 
@@ -763,23 +761,23 @@ plt.tight_layout()
 plt.show()
 
 print(f"\n{'='*70}")
-print(f"RÉSUMÉ - Section E : Variables Pertinentes")
+print("RÉSUMÉ - Section E : Variables Pertinentes")
 print(f"{'='*70}")
-print(f"\n✓ Variables COMPORTEMENTALES (prioritaires) :")
-print(f"  - PAY_0, PAY_2, PAY_3 : Historique de retard = signal dominant")
-print(f"  - avg_pay_delay, max_pay_delay, n_months_late : Synthèse utile")
-print(f"  - repayment_ratio, credit_utilization : Déséquilibre financier")
-print(f"\n✓ Variables DESCRIPTIVES (secondaires) :")
-print(f"  - LIMIT_BAL : Exposition brute (modérée)")
-print(f"  - AGE : Faible signal (garder par prudence)")
-print(f"\n✗ À SUPPRIMER :")
-print(f"  - EDUCATION, MARRIAGE, SEX : Très peu discriminants")
-print(f"\n📋 MODÈLE RECOMMANDÉ (Axe 4) :")
-print(f"  Features essentielles (7) : PAY_0, PAY_2, PAY_3, avg_bill_amt, avg_pay_amt,")
-print(f"                              repayment_ratio, n_months_late")
-print(f"  Features optionnelles : LIMIT_BAL, AGE")
-print(f"  Features à exclure : ID, EDUCATION, MARRIAGE, SEX, colonnes redondantes")
-print(f"\n🎯 Signal métier : Les variables comportementales dominent les variables descriptives.")
+print("\n✓ Variables COMPORTEMENTALES (prioritaires) :")
+print("  - PAY_0, PAY_2, PAY_3 : Historique de retard = signal dominant")
+print("  - avg_pay_delay, max_pay_delay, n_months_late : Synthèse utile")
+print("  - repayment_ratio, credit_utilization : Déséquilibre financier")
+print("\n✓ Variables DESCRIPTIVES (secondaires) :")
+print("  - LIMIT_BAL : Exposition brute (modérée)")
+print("  - AGE : Faible signal (garder par prudence)")
+print("\n✗ À SUPPRIMER :")
+print("  - EDUCATION, MARRIAGE, SEX : Très peu discriminants")
+print("\n📋 MODÈLE RECOMMANDÉ (Axe 4) :")
+print("  Features essentielles (7) : PAY_0, PAY_2, PAY_3, avg_bill_amt, avg_pay_amt,")
+print("                              repayment_ratio, n_months_late")
+print("  Features optionnelles : LIMIT_BAL, AGE")
+print("  Features à exclure : ID, EDUCATION, MARRIAGE, SEX, colonnes redondantes")
+print("\n🎯 Signal métier : Les variables comportementales dominent les variables descriptives.")
 
 # %% [markdown]
 # ---
@@ -847,4 +845,3 @@ print(f"\n🎯 Signal métier : Les variables comportementales dominent les vari
 # 5. **Déploiement** : Scorer clients, segmenter par risque, monitorer dérive
 # 
 # ---
-
