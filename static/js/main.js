@@ -51,7 +51,7 @@ function initMlLoader() {
       step.classList.remove('is-active', 'is-done');
       if (index < activeIndex) {
         step.classList.add('is-done');
-        if (state) state.textContent = 'done';
+        if (state) state.textContent = 'terminé';
       } else if (index === activeIndex) {
         step.classList.add('is-active');
         if (state) state.textContent = errorText || 'en cours';
