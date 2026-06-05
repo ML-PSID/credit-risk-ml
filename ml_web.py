@@ -271,7 +271,7 @@ def _chart_precision_recall(y_test: np.ndarray, y_proba: np.ndarray, threshold: 
     idx = int(np.argmin(np.abs(thresholds - threshold))) if len(thresholds) > 0 else 0
 
     fig = go.Figure()
-    fig.add_scatter(x=recall, y=precision, mode="lines", line=dict(color="#00b894", width=2.5), name=f"RF (AP = {ap:.3f})")
+    fig.add_scatter(x=recall, y=precision, mode="lines", line=dict(color="#ff6a3d", width=2.5), name=f"RF (AP = {ap:.3f})")
     fig.add_scatter(
         x=[recall[idx]], y=[precision[idx]], mode="markers",
         marker=dict(color="#ffd166", size=12, symbol="star"),
