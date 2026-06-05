@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="stagger">
+  <p class="eyebrow">Machine Learning</p>
+  <h1>Random Forest<br>Optimise</h1>
+  <p>Le modele peut prendre quelques minutes a tourner. Cette page affiche l'etat de chargement,
+    puis injecte les resultats automatiquement.</p>
+</section>
+
+<section class="ml-loading" data-ml-loader aria-live="polite">
+  <div class="ml-loader">
+    <div class="ml-loader-head">
+      <p class="ml-loader-title">Entrainement en cours</p>
+      <p class="ml-loader-sub">Pre-traitement, recherche d'hyperparametres, evaluation.</p>
+    </div>
+    <div class="ml-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuetext="Chargement en cours">
+      <span></span>
+    </div>
+
+    <div class="ml-steps" data-ml-steps>
+      <div class="ml-step is-active" data-ml-step>
+        <span class="ml-step-name">Preparation des donnees</span>
+        <span class="ml-step-state">en cours</span>
+      </div>
+      <div class="ml-step" data-ml-step>
+        <span class="ml-step-name">Recherche d'hyperparametres</span>
+        <span class="ml-step-state">en attente</span>
+      </div>
+      <div class="ml-step" data-ml-step>
+        <span class="ml-step-name">Entrainement final</span>
+        <span class="ml-step-state">en attente</span>
+      </div>
+      <div class="ml-step" data-ml-step>
+        <span class="ml-step-name">Validation croisee</span>
+        <span class="ml-step-state">en attente</span>
+      </div>
+      <div class="ml-step" data-ml-step>
+        <span class="ml-step-name">Generation des graphiques</span>
+        <span class="ml-step-state">en attente</span>
+      </div>
+    </div>
+    <button class="ml-retry" type="button" data-ml-retry>Reessayer</button>
+  </div>
+</section>
+
+<section id="ml-content" data-ml-content></section>
+
+<noscript>
+  <p class="ml-noscript">Active JavaScript pour charger les resultats du modele.</p>
+</noscript>
+{% endblock %}
