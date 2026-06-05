@@ -11,7 +11,7 @@ __pycache__/
 venv/
 env/
 ENV/
-
+.agents
 # Build and packaging artifacts
 build/
 dist/

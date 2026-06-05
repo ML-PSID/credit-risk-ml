@@ -1,0 +1,59 @@
+name: Quality and SonarCloud
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Python checks and SonarCloud
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff
+
+      - name: Static analysis
+        run: ruff check app.py analysis_web.py ml_web.py data/py-scripts/credit_analysis.py
+
+      - name: Python compile check
+        run: python -m py_compile app.py analysis_web.py ml_web.py
+
+      - name: Flask route smoke tests
+        run: |
+          python - <<'PY'
+          from app import app
+
+          client = app.test_client()
+          for route in ["/", "/dashboard", "/ml"]:
+              response = client.get(route)
+              assert response.status_code == 200, f"{route} returned {response.status_code}"
+              print(f"{route}: {response.status_code}")
+          PY
+
+      - name: SonarCloud scan
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.qualitygate.wait=true

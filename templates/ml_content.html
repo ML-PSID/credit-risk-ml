@@ -1,0 +1,351 @@
+<section class="stagger">
+  <p>Random Forest avec recherche d'hyperparamètres (<code>RandomizedSearchCV</code>, scoring = rappel),
+    seuil de décision optimisé automatiquement, 4 nouvelles features dérivées et validation croisée
+    stratifiée 5 folds.</p>
+</section>
+
+<!-- KPI cards -->
+<div class="kpis stagger">
+  <article>
+    <span>Accuracy</span>
+    <strong>{{ metrics.accuracy }}</strong>
+  </article>
+  <article>
+    <span>Précision (cl. 1)</span>
+    <strong>{{ metrics.precision }}</strong>
+  </article>
+  <article>
+    <span>Rappel (cl. 1)</span>
+    <strong>{{ metrics.recall }}</strong>
+  </article>
+  <article>
+    <span>F1-Score (cl. 1)</span>
+    <strong>{{ metrics.f1 }}</strong>
+  </article>
+  <article>
+    <span>AUC-ROC</span>
+    <strong>{{ metrics.auc_roc }}</strong>
+  </article>
+  <article>
+    <span>Seuil optimal</span>
+    <strong>{{ metrics.threshold }}</strong>
+  </article>
+  <article>
+    <span>CV Rappel (5-fold)</span>
+    <strong style="font-size:1rem;">{{ metrics.cv_recall }}</strong>
+  </article>
+</div>
+
+<!-- Tabs -->
+<div class="tabs stagger">
+  <button class="tab-btn active" data-tab="tab-results">Résultats</button>
+  <button class="tab-btn" data-tab="tab-model">Analyse du modèle</button>
+  <button class="tab-btn" data-tab="tab-rl">Comparaison RL</button>
+  <button class="tab-btn" data-tab="tab-cv">Validation croisée</button>
+  <button class="tab-btn" data-tab="tab-learning">Courbe d'apprentissage</button>
+  <button class="tab-btn" data-tab="tab-approach">Approche &amp; Paramètres</button>
+</div>
+
+<!-- Tab 1 : Résultats -->
+<div id="tab-results" class="tab-panel active">
+  <div class="charts">
+    <div class="panel tilt-a chart-card">
+      {{ charts.confusion|safe }}
+      <p class="chart-note">Matrice calculée avec le seuil optimal ({{ metrics.threshold }}) au lieu de 0,5.
+        Les Faux Négatifs (FN), défauts non détectés, sont minimisés sous la contrainte
+        précision ≥ 42 %.</p>
+    </div>
+    <div class="panel tilt-b chart-card">
+      {{ charts.scores|safe }}
+      <p class="chart-note">Métriques calculées au seuil optimal {{ metrics.threshold }}.
+        Le rappel est la métrique prioritaire : en risque crédit, manquer un défaut coûte
+        bien plus cher que signaler un faux positif.</p>
+    </div>
+  </div>
+  <div class="charts">
+    <div class="panel full chart-card">
+      {{ charts.proba_dist|safe }}
+      <p class="chart-note">La ligne pointillée matérialise le seuil optimal {{ metrics.threshold }}.
+        Tout client dont la probabilité prédite dépasse ce seuil est classé "à risque".
+        La séparation des deux distributions confirme la capacité discriminante du modèle.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 2 : Analyse du modèle -->
+<div id="tab-model" class="tab-panel">
+  <div class="charts">
+    <div class="panel full chart-card">
+      {{ charts.importance|safe }}
+      <p class="chart-note">Les barres jaunes sont les 4 nouvelles features dérivées ajoutées pour améliorer
+        la détection. <strong>trend_pay_delay</strong> et <strong>n_zero_payment</strong> capturent
+        respectivement l'aggravation du retard et l'absence totale de remboursement, deux signaux
+        d'alarme forts.</p>
+    </div>
+  </div>
+  <div class="charts">
+    <div class="panel tilt-a chart-card">
+      {{ charts.roc|safe }}
+      <p class="chart-note">L'AUC-ROC est indépendante du seuil de décision. Elle mesure la capacité
+        de discrimination globale du modèle sur tous les seuils possibles.</p>
+    </div>
+    <div class="panel tilt-b chart-card">
+      {{ charts.pr|safe }}
+      <p class="chart-note">L'étoile jaune marque le seuil optimal {{ metrics.threshold }} sur la courbe.
+        C'est le point qui maximise le rappel tout en maintenant une précision ≥ 42 %.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 3 : Régression Logistique -->
+<div id="tab-rl" class="tab-panel">
+  <div class="split stagger">
+    <div class="panel tilt-a">
+      <p class="eyebrow" style="font-size:.78rem;">Deuxième algorithme</p>
+      <h2>Régression Logistique pondérée</h2>
+      <p>La Régression Logistique sert de modèle de référence interprétable. Elle utilise les mêmes 34 features que le Random Forest, avec standardisation des variables et <code>class_weight="balanced"</code> pour tenir compte du déséquilibre des classes.</p>
+      <p>Son rôle est de vérifier si les signaux identifiés par la DataViz et le Random Forest restent exploitables dans un modèle linéaire plus simple.</p>
+    </div>
+    <div class="panel tilt-b">
+      <p class="eyebrow" style="font-size:.78rem;">Métriques RL</p>
+      <table>
+        <tbody>
+          <tr><th>Accuracy</th><td>{{ rl_metrics.accuracy }}</td></tr>
+          <tr><th>Précision</th><td>{{ rl_metrics.precision }}</td></tr>
+          <tr><th>Rappel</th><td>{{ rl_metrics.recall }}</td></tr>
+          <tr><th>F1-Score</th><td>{{ rl_metrics.f1 }}</td></tr>
+          <tr><th>AUC-ROC</th><td>{{ rl_metrics.auc_roc }}</td></tr>
+          <tr><th>Seuil optimal</th><td>{{ rl_metrics.threshold }}</td></tr>
+          <tr><th>CV Rappel (5-fold)</th><td>{{ rl_metrics.cv_recall }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="split stagger">
+    <div class="panel tilt-a">
+      <p class="eyebrow" style="font-size:.78rem;">Hyperparamètres optimaux RL</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Paramètre</th>
+            <th>Valeur</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for param, value in rl_best_params.items() %}
+          <tr>
+            <td>{{ param }}</td>
+            <td>{{ value }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p style="margin-top:.6rem; font-size:.85rem; color:var(--muted);">
+        Recherche : grille aléatoire sur <code>C</code>, 3-fold CV, <code>scoring="recall"</code>
+      </p>
+    </div>
+    <div class="panel tilt-b">
+      <p class="eyebrow" style="font-size:.78rem;">Prétraitement RL</p>
+      <p>La Régression Logistique utilise les mêmes variables que le Random Forest, mais ajoute une standardisation avec <code>StandardScaler</code>. C'est nécessaire car les coefficients d'un modèle linéaire sont sensibles aux échelles des variables.</p>
+      <p>Le déséquilibre est traité avec <code>class_weight="balanced"</code>, exactement comme dans le Random Forest.</p>
+    </div>
+  </div>
+  <div class="charts">
+    <div class="panel full chart-card">
+      {{ charts.comparison|safe }}
+      <p class="chart-note">Comparaison calculée sur le même split train/test. Chaque modèle utilise son propre seuil optimisé sous contrainte précision ≥ 42 %.</p>
+    </div>
+  </div>
+  <div class="charts">
+    <div class="panel tilt-a chart-card">
+      {{ charts.rl_confusion|safe }}
+      <p class="chart-note">Matrice de confusion de la Régression Logistique avec son seuil optimal ({{ rl_metrics.threshold }}).</p>
+    </div>
+    <div class="panel tilt-b chart-card">
+      {{ charts.roc_comparison|safe }}
+      <p class="chart-note">La courbe ROC compare la capacité de séparation globale du Random Forest et de la Régression Logistique.</p>
+    </div>
+  </div>
+  <div class="charts">
+    <div class="panel full chart-card">
+      {{ charts.rl_coefficients|safe }}
+      <p class="chart-note">Les coefficients sont calculés après standardisation. Les variables positives augmentent la probabilité de défaut prédite; les variables négatives la réduisent.</p>
+    </div>
+  </div>
+  <div class="charts">
+    <div class="panel tilt-a chart-card">
+      {{ charts.rl_roc|safe }}
+      <p class="chart-note">Courbe ROC dédiée à la Régression Logistique, indépendante du seuil.</p>
+    </div>
+    <div class="panel tilt-b chart-card">
+      {{ charts.rl_pr|safe }}
+      <p class="chart-note">L'étoile jaune marque le seuil optimal RL ({{ rl_metrics.threshold }}) selon la même contrainte précision ≥ 42 %.</p>
+    </div>
+  </div>
+  <div class="charts">
+    <div class="panel tilt-a chart-card">
+      {{ charts.rl_scores|safe }}
+      <p class="chart-note">Métriques RL calculées au seuil optimal {{ rl_metrics.threshold }}.</p>
+    </div>
+    <div class="panel tilt-b chart-card">
+      {{ charts.rl_proba_dist|safe }}
+      <p class="chart-note">Distribution des probabilités de défaut prédites par la Régression Logistique.</p>
+    </div>
+  </div>
+  <div class="charts">
+    <div class="panel tilt-a chart-card">
+      {{ charts.rl_cv|safe }}
+      <p class="chart-note">Validation croisée stratifiée RL sur 5 folds, avec la même logique que le Random Forest.</p>
+    </div>
+    <div class="panel tilt-b chart-card">
+      {{ charts.rl_learning|safe }}
+      <p class="chart-note">Courbe d'apprentissage RL calculée en AUC-ROC sur différentes tailles d'entraînement.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 3 : Validation croisée -->
+<div id="tab-cv" class="tab-panel">
+  <div class="charts">
+    <div class="panel full chart-card">
+      {{ charts.cv|safe }}
+      <p class="chart-note">Validation croisée stratifiée sur l'ensemble complet (30 000 observations),
+        5 folds. Chaque fold préserve la proportion de défauts (≈ 22 %). Les lignes pointillées
+        indiquent la moyenne de chaque métrique. La faible variance entre folds confirme la
+        stabilité du modèle.</p>
+    </div>
+  </div>
+  <div class="split stagger">
+    <div class="panel tilt-a">
+      <p class="eyebrow" style="font-size:.78rem;">Pourquoi validation croisée stratifiée ?</p>
+      <p>Sur un jeu déséquilibré (22 % défauts), un split aléatoire peut par malchance concentrer
+        trop peu de défauts dans un fold. La stratification garantit que chaque fold contient
+        exactement la même proportion de défauts que le dataset complet.</p>
+      <p>Résultat : les métriques par fold sont comparables et la moyenne reflète fidèlement
+        la performance réelle attendue en production.</p>
+    </div>
+    <div class="panel tilt-b">
+      <p class="eyebrow" style="font-size:.78rem;">Lecture des résultats CV</p>
+      <p><strong>CV Rappel moyen :</strong> {{ metrics.cv_recall }}</p>
+      <p>Un écart-type faible (< 0,02) indique que le modèle est robuste : ses performances ne dépendent pas du hasard
+          du split. Si l'écart-type est élevé, cela signalerait un sur-apprentissage sur certaines partitions.</p>
+          <p>Le rappel CV est calculé au seuil 0,5 par défaut. En production, appliquer
+            le seuil {{ metrics.threshold }} augmentera encore le rappel.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 4 : Courbe d'apprentissage -->
+<div id="tab-learning" class="tab-panel">
+  <div class="charts">
+    <div class="panel full chart-card">
+      {{ charts.learning|safe }}
+      <p class="chart-note">Courbe calculée avec les hyperparamètres optimaux trouvés par
+        <code>RandomizedSearchCV</code> (50 arbres pour la rapidité). La convergence entre
+        train et test indique que le modèle généralise bien.
+      </p>
+    </div>
+  </div>
+  <div class="split stagger">
+    <div class="panel tilt-a">
+      <p class="eyebrow" style="font-size:.78rem;">Interprétation</p>
+      <p>Si les deux courbes convergent et se stabilisent à une valeur élevée, le modèle
+        n'est ni en sous-apprentissage ni en sur-apprentissage. Un écart persistant
+        train/test indiquerait un sur-apprentissage résiduel.</p>
+    </div>
+    <div class="panel tilt-b">
+      <p class="eyebrow" style="font-size:.78rem;">Pistes restantes</p>
+      <ul>
+        <li>SHAP values pour l'explicabilité individuelle</li>
+        <li>Calibration des probabilités (Platt scaling)</li>
+        <li>Seuil par segment client (limite de crédit, âge)</li>
+        <li>Gradient Boosting en comparaison (XGBoost)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 5 : Approche & Paramètres -->
+<div id="tab-approach" class="tab-panel">
+  <div class="split stagger">
+    <div class="panel tilt-a">
+      <p class="eyebrow" style="font-size:.78rem;">Hyperparamètres optimaux (RandomizedSearchCV)</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Paramètre</th>
+            <th>Valeur</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for param, value in best_params.items() %}
+          <tr>
+            <td>{{ param }}</td>
+            <td>{{ value }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p style="margin-top:.6rem; font-size:.85rem; color:var(--muted);">
+        Recherche : 15 itérations × 3-fold CV, <code>scoring="recall"</code>
+      </p>
+    </div>
+    <div class="panel tilt-b">
+      <p class="eyebrow" style="font-size:.78rem;">Nouvelles features ajoutées</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Calcul</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>trend_pay_delay</td>
+            <td>PAY_0 − PAY_6</td>
+          </tr>
+          <tr>
+            <td>n_zero_payment</td>
+            <td>Nb mois PAY_AMT = 0</td>
+          </tr>
+          <tr>
+            <td>last_pay_ratio</td>
+            <td>PAY_AMT1 / (BILL_AMT1 + 1)</td>
+          </tr>
+          <tr>
+            <td>bill_acceleration</td>
+            <td>BILL_AMT1 − BILL_AMT6</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top:.6rem; font-size:.85rem; color:var(--muted);">
+        Total features : 34 (3 catégorielles + 27 numériques brutes + 4 dérivées DataViz + 4 nouvelles)
+      </p>
+    </div>
+  </div>
+  <div class="split stagger">
+    <div class="panel tilt-a">
+      <p class="eyebrow" style="font-size:.78rem;">Optimisation du seuil de décision</p>
+      <p>Le seuil par défaut (0,5) maximise l'accuracy globale mais néglige les défauts.
+        Le seuil optimal <strong>{{ metrics.threshold }}</strong> est trouvé automatiquement
+        sur la courbe Précision-Rappel :</p>
+      <p style="font-family:'JetBrains Mono',monospace; font-size:.85rem; color:#ffd166;">
+        argmax(Rappel) s.t. Précision ≥ 42%
+      </p>
+      <p>Ce seuil garantit que le modèle reste exploitable (ne signale pas tout le monde comme défaut)
+        tout en détectant un maximum de vrais cas à risque.</p>
+    </div>
+    <div class="panel tilt-b">
+      <p class="eyebrow" style="font-size:.78rem;">Cohérence avec l'analyse DataViz</p>
+      <p>Les 3 axes explorés dans le Dashboard se retrouvent dans les features importantes :</p>
+      <ul>
+        <li><strong>Axe 2</strong> (retards) → PAY_0, avg_pay_delay, <em>trend_pay_delay</em></li>
+        <li><strong>Axe 3</strong> (remboursement) → repayment_ratio, <em>n_zero_payment</em>, <em>last_pay_ratio</em>
+        </li>
+        <li><strong>Axe 1</strong> (profil) → LIMIT_BAL, AGE, <em>bill_acceleration</em></li>
+      </ul>
+      <p>Les nouvelles features (en italique) prolongent directement les insights DataViz
+        avec un signal plus granulaire.</p>
+    </div>
+  </div>
+</div>

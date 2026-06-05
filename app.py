@@ -32,9 +32,14 @@ def dashboard() -> str:
 
 @app.route("/ml")
 def ml() -> str:
+    return render_template("ml.html")
+
+
+@app.route("/ml-pack")
+def ml_pack() -> str:
     pack = build_ml_pack(str(DATASET))
     return render_template(
-        "ml.html",
+        "ml_content.html",
         metrics=pack.metrics,
         rl_metrics=pack.rl_metrics,
         charts=pack.charts,

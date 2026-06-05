@@ -130,3 +130,181 @@ th,td { padding:.62rem .45rem; text-align:left; border-bottom:1px solid rgba(255
   aspect-ratio: 16 / 9;
   border: 0;
 }
+
+.ml-loading {
+  margin-top: 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: linear-gradient(140deg, rgba(10, 18, 28, 0.85), rgba(16, 34, 48, 0.9));
+  padding: 1.1rem 1.2rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.ml-loading.is-hidden {
+  display: none;
+}
+
+.ml-loader {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.ml-loader-title {
+  font-family: "Syne", sans-serif;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.ml-loader-sub {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.ml-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.ml-bar span {
+  display: block;
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, rgba(255, 106, 61, 0.35), rgba(255, 209, 102, 0.8));
+  animation: ml-progress 1.8s ease-in-out infinite;
+  border-radius: inherit;
+}
+
+.ml-pulse {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.ml-pulse span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ml-pulse span::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(0, 184, 148, 0.8);
+  box-shadow: 0 0 0 4px rgba(0, 184, 148, 0.12);
+  animation: ml-pulse 1.4s ease-in-out infinite;
+}
+
+.ml-pulse span:nth-child(2)::before { animation-delay: 0.2s; }
+.ml-pulse span:nth-child(3)::before { animation-delay: 0.4s; }
+
+.ml-steps {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.2rem 0 0.1rem;
+}
+
+.ml-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.6rem;
+  border: 1px solid transparent;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.ml-step-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ml-step-name::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.ml-step-state {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ml-step.is-active {
+  color: var(--ink);
+  border-color: rgba(255, 106, 61, 0.5);
+  background: rgba(255, 106, 61, 0.12);
+}
+
+.ml-step.is-active .ml-step-name::before {
+  background: rgba(255, 209, 102, 0.9);
+  box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.18);
+}
+
+.ml-step.is-done {
+  color: #d6f5ec;
+  border-color: rgba(0, 184, 148, 0.4);
+  background: rgba(0, 184, 148, 0.12);
+}
+
+.ml-step.is-done .ml-step-name::before {
+  background: rgba(0, 184, 148, 0.95);
+}
+
+.ml-retry {
+  align-self: start;
+  display: none;
+  border: 1px solid var(--accent);
+  background: rgba(255, 106, 61, 0.12);
+  color: var(--ink);
+  font-family: "Syne", sans-serif;
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--r1);
+  cursor: pointer;
+}
+
+.ml-retry.is-visible {
+  display: inline-flex;
+}
+
+.ml-loading.has-error .ml-loader-title::after {
+  content: " (erreur)";
+  color: #ffb347;
+}
+
+.ml-noscript {
+  margin-top: 1rem;
+  color: var(--muted);
+}
+
+@keyframes ml-progress {
+  0% { transform: translateX(-60%); }
+  50% { transform: translateX(20%); }
+  100% { transform: translateX(120%); }
+}
+
+@keyframes ml-pulse {
+  0%, 100% { transform: scale(0.9); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ml-bar span,
+  .ml-pulse span::before {
+    animation: none;
+  }
+}
