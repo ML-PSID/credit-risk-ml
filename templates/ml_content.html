@@ -226,7 +226,8 @@
     </div>
     <div class="panel tilt-b">
       <p class="eyebrow" style="font-size:.78rem;">Lecture des résultats CV</p>
-      <p>Un écart-type faible (&lt; 0,02) indique que le modèle est robuste : ses performances ne dépendent pas du hasard
+      <p>Un écart-type faible (&lt; 0,02) indique que le modèle est robuste : ses performances ne dépendent pas du hasard
+
           du split. Si l'écart-type est élevé, cela signalerait un sur-apprentissage sur certaines partitions.</p>
           <p>Le rappel CV est calculé au seuil 0,5 par défaut. En production, appliquer
             le seuil {{ metrics.threshold }} augmentera encore le rappel.</p>
@@ -317,7 +318,7 @@
           </tr>
         </tbody>
       </table>
-      <p style="margin-top:.6rem; font-size:.85rem; color:var(--muted);">
+        Total features : 34 (3 catégorielles + 27 numériques (dont dérivées) + 4 nouvelles)
         Total features : 34 (3 catégorielles + 27 numériques brutes + 4 dérivées DataViz + 4 nouvelles)
       </p>
     </div>
