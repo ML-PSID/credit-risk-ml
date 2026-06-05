@@ -36,8 +36,10 @@ def ml() -> str:
     return render_template(
         "ml.html",
         metrics=pack.metrics,
+        rl_metrics=pack.rl_metrics,
         charts=pack.charts,
         best_params=pack.best_params,
+        rl_best_params=pack.rl_best_params,
     )
 
 
