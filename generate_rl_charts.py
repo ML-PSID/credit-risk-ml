@@ -26,6 +26,7 @@ from sklearn.preprocessing import OrdinalEncoder, StandardScaler
 
 
 BASE_DIR = Path(__file__).resolve().parent
+IMAGE_DIR = BASE_DIR / "static" / "image-ml"
 DATASET = BASE_DIR / "data" / "notebook" / "default of credit card clients.xls"
 CAT_FEATURES = ["SEX", "EDUCATION", "MARRIAGE"]
 NUMERIC_FEATURES = [
@@ -116,8 +117,9 @@ def _style() -> None:
 
 
 def _save(fig: plt.Figure, filename: str) -> None:
+    IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
-    fig.savefig(BASE_DIR / filename, dpi=160, bbox_inches="tight", facecolor=fig.get_facecolor())
+    fig.savefig(IMAGE_DIR / filename, dpi=160, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
 
 

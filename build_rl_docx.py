@@ -12,6 +12,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 
 BASE_DIR = Path(__file__).resolve().parent
+IMAGE_DIR = BASE_DIR / "static" / "image-ml"
 SOURCE = BASE_DIR / "rapport_section_rl.md"
 OUTPUT = BASE_DIR / "rapport_section_rl.docx"
 
@@ -89,7 +90,7 @@ def add_caption(doc: Document, text: str) -> None:
 
 
 def add_image(doc: Document, image_name: str) -> None:
-    image_path = BASE_DIR / image_name
+    image_path = IMAGE_DIR / image_name
     if not image_path.exists():
         p = doc.add_paragraph()
         p.add_run(f"[Image manquante : {image_name}]").bold = True
